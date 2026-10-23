@@ -13,7 +13,7 @@ class ExportExcel
 	var $filename;
 	
 	//functions of the class
-	function ExportExcel($f_name) //constructor
+	function __construct($f_name)
 	{
 		$this->filename=$f_name;
 	}

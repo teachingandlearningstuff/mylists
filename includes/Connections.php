@@ -98,6 +98,7 @@ Class Connections {
 		
 			// NEVER
 			// show connection strings publicly!
+			$environment = null;
 			$env = getenv("APPSETTING_" . $this->connAppName . "_" . 'environment');
 			if($env){
 				$environment = $env;
@@ -115,12 +116,17 @@ Class Connections {
 				}
 			}
 
-			if($environment == 'local'){
+			if($environment === 'local'){
 				$this->showConnection = true;
 			}
 			
 			/** OPEN CONNECTION TO DATABSE WITH MySQLi */
-			$this->conn = @$this->openConn();
+			try {
+				$this->conn = @$this->openConn();
+			}catch(\mysqli_sql_exception $exception){
+				$this->conn = null;
+				$this->showConnectionFailure($exception->getCode(), $exception->getMessage());
+			}
 		}else{
 			$this->conn = null;
 		}
@@ -163,15 +169,19 @@ Class Connections {
 
 		// check connection
 		if($conn->connect_error || $link === false){
-			if($this->showConnection){
-				echo "<div class='debugOutput'>Failed to connect to MySQLi: #" . $conn->connect_errno . " &mdash; " . $conn->connect_error . "</div>"; // dev: show reason
-			}else{
-				echo "<div class='debugOutput'>Failed to connect.</div>"; // live: hide reason
-			}
+			$this->showConnectionFailure($conn->connect_errno, $conn->connect_error);
 			return null;
 		}
 	
 		return $conn;
+	}
+
+	private function showConnectionFailure($errorNumber, $errorMessage): void {
+		if($this->showConnection){
+			echo "<div class='debugOutput'>Failed to connect to MySQLi: #" . $errorNumber . " &mdash; " . $errorMessage . "</div>";
+		}else{
+			echo "<div class='debugOutput'>Failed to connect.</div>";
+		}
 	}
 
 	private function closeConn(){
